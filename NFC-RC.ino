@@ -1,12 +1,10 @@
 #include <SPI.h>
 #include <MFRC522.h>
-#include <Servo.h>
 #include <avr/wdt.h>
 
 #define RST_PIN 9
 #define SS_PIN 10
 MFRC522 mfrc522(SS_PIN, RST_PIN);
-Servo myservo;
 
 const byte BLOCK_ADDR = 1;
 MFRC522::MIFARE_Key key;
@@ -24,8 +22,6 @@ void setup() {
   Serial.begin(9600);
   SPI.begin();
   mfrc522.PCD_Init();
-  myservo.attach(3);
-  myservo.write(0);
 
   for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF;
   memset(storedCodes, 0, sizeof(storedCodes));
@@ -61,16 +57,11 @@ void processCard(int uidIndex) {
 
   if (mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, BLOCK_ADDR, &key, &(mfrc522.uid)) != MFRC522::STATUS_OK) {
     Serial.println(F("Authentication failed"));
-    Serial.println();
-    Serial.println(F("*****"));
-    Serial.println();
     return;
   }
 
   if (mfrc522.MIFARE_Read(BLOCK_ADDR, buffer, &size) != MFRC522::STATUS_OK) {
     Serial.println(F("Read failed: A MIFARE PICC responded with NAK"));
-    Serial.println();
-    Serial.println(F("*****"));
     Serial.println();
     delay(3000);
     return;
@@ -87,18 +78,14 @@ void processCard(int uidIndex) {
     if (mfrc522.MIFARE_Write(BLOCK_ADDR, storedCodes[uidIndex], 16) != MFRC522::STATUS_OK) {
       Serial.println(F("Write failed"));
       Serial.println();
-      Serial.println(F("*****"));
-      Serial.println();
     } else {
       Serial.println(F("New code written to card."));
+      Serial.println();
       tone(8, 1200, 200);
       delay(220);
       tone(8, 1200, 200);
       delay(220);
       tone(8, 1200, 200);
-      Serial.println();
-      Serial.println(F("*****"));
-      Serial.println();
     }
   } else if (memcmp(buffer, storedCodes[uidIndex], 16) == 0) {
     Serial.println(F("Code is correct!"));
@@ -109,18 +96,12 @@ void processCard(int uidIndex) {
     if (mfrc522.MIFARE_Write(BLOCK_ADDR, storedCodes[uidIndex], 16) != MFRC522::STATUS_OK) {
       Serial.println(F("Write failed"));
       Serial.println();
-      Serial.println(F("*****"));
-      Serial.println();
     } else {
       Serial.println(F("New code written to card."));
-      Serial.println();
-      Serial.println(F("*****"));
       Serial.println();
     }
   } else {
     Serial.println(F("Code is not correct!"));
-    Serial.println();
-    Serial.println(F("*****"));
     Serial.println();
   }
 
@@ -136,11 +117,11 @@ void loop() {
     command.trim();
     if (command == "R") {
       Serial.println(F("Resetting..."));
-        for (int i = 0; i < 100; i++) {
-          Serial.println();
-        }
+      for (int i = 0; i < 100; i++) {
+        Serial.println();
+      }
       wdt_enable(WDTO_15MS);
-      while (1);
+      while (true);
     }
   }
 
@@ -154,8 +135,6 @@ void loop() {
     processCard(uidIndex);
   } else {
     Serial.println(F("UID not allowed."));
-    Serial.println();
-    Serial.println(F("*****"));
     Serial.println();
     tone(8, 1300, 800);
     delay(3000);
